@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 import { openState } from '../src/core/state.mjs';
 import { applyRenames } from '../src/core/journal.mjs';
+import { waitForOwnedHealth } from './helpers/owned-server.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SERVER = path.join(ROOT, 'src', 'server.mjs');
@@ -85,16 +86,7 @@ async function killServer(child) {
 }
 
 async function waitHealth(port, child, output) {
-  const deadline = Date.now() + 20000;
-  while (Date.now() < deadline) {
-    if (child.exitCode !== null) throw new Error(`server exited early (code ${child.exitCode}): ${output()}`);
-    try {
-      const res = await fetch(`http://127.0.0.1:${port}/api/health`);
-      if (res.ok) { await res.text(); return; }
-    } catch { /* not listening yet */ }
-    await sleep(100);
-  }
-  throw new Error(`server not ready on ${port}: ${output()}`);
+  return waitForOwnedHealth(`http://127.0.0.1:${port}`, child, output);
 }
 
 /** 启动并等待就绪；端口冲突时自动换端口重试。 */

@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -17,7 +17,7 @@ async function freePort() {
   return port;
 }
 
-async function fixture(t, { delayMs = 0, invalidConfig = false } = {}) {
+async function fixture(t, { holdStartup = false, invalidConfig = false } = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'avc-gui-launcher-'));
   const configFile = path.join(dir, 'config.json');
   const emptyDir = path.join(dir, 'empty-media');
@@ -29,13 +29,17 @@ async function fixture(t, { delayMs = 0, invalidConfig = false } = {}) {
     await fs.writeFile(configFile, JSON.stringify(config), 'utf8');
   }
   const port = await freePort();
-  const child = spawn(process.execPath, [path.join(ROOT, 'src/gui-launcher.mjs')], {
+  const gate = path.join(dir, 'backend-start.release');
+  const releaseStartup = () => holdStartup ? fs.writeFile(gate, 'release') : Promise.resolve();
+  const preload = holdStartup ? ['--import', pathToFileURL(path.join(ROOT, 'tests/helpers/backend-start-gate.mjs')).href] : [];
+  const child = spawn(process.execPath, [...preload, path.join(ROOT, 'src/gui-launcher.mjs')], {
     cwd: ROOT,
-    env: { ...process.env, AVC_NO_BROWSER: '1', AVC_PORT: String(port), AVC_CONFIG_FILE: configFile, AVC_STARTUP_DELAY_MS: String(delayMs) },
+    env: { ...process.env, AVC_NO_BROWSER: '1', AVC_PORT: String(port), AVC_CONFIG_FILE: configFile, AVC_STARTUP_DELAY_MS: '0', AVC_TEST_BACKEND_START_GATE: holdStartup ? gate : '' },
     stdio: ['ignore','ignore','ignore','ipc'], windowsHide: true,
   });
   const base = `http://127.0.0.1:${port}`;
   t.after(async () => {
+    await releaseStartup();
     if (child.exitCode == null) {
       const exited=new Promise(resolve=>child.once('exit',resolve));
       child.send({type:'shutdown'});
@@ -61,11 +65,12 @@ async function fixture(t, { delayMs = 0, invalidConfig = false } = {}) {
     if (!response) return null;
     return { response, body: await response.text() };
   });
-  return { child, base, emptyDir, initial, state, waitFor };
+  if (holdStartup) await waitFor(() => fs.stat(gate + '.held').then(() => true, () => false));
+  return { child, base, emptyDir, initial, state, waitFor, releaseStartup };
 }
 
 test('launcher serves startup immediately, gates APIs, and forwards health and SSE after readiness', async t => {
-  const app = await fixture(t, { delayMs: 700 });
+  const app = await fixture(t, { holdStartup: true });
   assert.equal(app.initial.response.status, 200);
   assert.match(app.initial.body, /少女祈祷中/);
   assert.equal((await fetch(`${app.base}/api/health`)).status, 503);
@@ -76,6 +81,8 @@ test('launcher serves startup immediately, gates APIs, and forwards health and S
     assert.ok(response.headers.get('content-type').startsWith(type));
   }
 
+  // Readiness cannot race the assertions above, regardless of client scheduling.
+  await app.releaseStartup();
   await app.waitFor(async () => (await app.state())?.phase === 'ready');
   const health = await fetch(`${app.base}/api/health`).then(r => r.json());
   assert.equal(health.ok, true);

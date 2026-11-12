@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 import { openState } from '../src/core/state.mjs';
 import { configSignature } from '../src/pipeline.mjs';
+import { waitForOwnedHealth } from './helpers/owned-server.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -27,15 +28,7 @@ function freePort() {
 }
 
 async function waitHealth(base, child, stderr, timeoutMs = 20000) {
-  const deadline = Date.now() + timeoutMs;
-  for (;;) {
-    try {
-      const res = await fetch(`${base}/api/health`);
-      if (res.ok) return res.json();
-    } catch { /* not ready */ }
-    if (Date.now() > deadline) throw new Error(`server did not start: ${stderr()}`);
-    await sleep(150);
-  }
+  return waitForOwnedHealth(base, child, stderr, timeoutMs);
 }
 
 async function startServer({ configPath, port }) {
@@ -48,8 +41,13 @@ async function startServer({ configPath, port }) {
   });
   child.stderr.on('data', (d) => { err += String(d); });
   const base = `http://127.0.0.1:${port}`;
-  const health = await waitHealth(base, child, () => err.slice(-1200));
-  return { child, base, health, stderr: () => err };
+  try {
+    const health = await waitHealth(base, child, () => err.slice(-1200));
+    return { child, base, health, stderr: () => err };
+  } catch (error) {
+    await stopServer({ child });
+    throw error;
+  }
 }
 
 async function stopServer(srv) {
