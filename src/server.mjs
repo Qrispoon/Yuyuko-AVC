@@ -386,15 +386,21 @@ function persistJob(job,override={}) {
   job.persistChain=jobWriter.enqueue(path.join(dir,job.id+'.json'),payload);
   return job.persistChain;
 }
-async function finalizeJob(job,status) {
+async function persistJobCompletion(job,status) {
   const finishedAt=Date.now(),report=job.report||{dir:job.dir,apply:job.kind!=='plan',results:job.partial||[],summary:job.summary||{},error:job.error||null};
   const reportJson=path.join(job.dataDir,`run-${job.kind}-${job.id}.json`);
   await writeJsonDurable(reportJson,report);
   const reportHash=digest(report);
   await persistJob(job,{status,finishedAt,reportJson,reportHash,report});
-  Object.assign(job,{status,finishedAt,reportJson,reportHash,report});
+  return {status,finishedAt,reportJson,reportHash,report};
+}
+function publishJobCompletion(job,completion) {
+  Object.assign(job,completion);
   broadcast(job,{type:'job-finished',job:publicJob(job)});
   for(const res of sseClients.get(job.id)||[])res.end();sseClients.delete(job.id);
+}
+async function finalizeJob(job,status) {
+  publishJobCompletion(job,await persistJobCompletion(job,status));
 }
 
 async function createJob(kind, dir, options) {
@@ -421,6 +427,7 @@ async function drainOwned() {
     while (queue.length && !running) {
       const job = queue.shift();
       if (job.status === 'cancelled') continue;
+      let completion;
       try {
       await withMutation(job.dataDir,async()=>{
       running=job;
@@ -487,19 +494,23 @@ async function drainOwned() {
         job.error = e.stack || e.message;
         pushLog(job, `FATAL: ${e.message}`);
       } finally {
-        try {
-          await writeLog('INFO',`job finishing ${job.id} status=${terminalStatus}`);
-          await finalizeJob(job,terminalStatus);
-          running=null;
-        }catch(e){job.finalizationError=e;job.progress={...job.progress,finalizing:true,error:e.code||e.message};throw e;}
+        job.finalizing=true;
+        await writeLog('INFO',`job finishing ${job.id} status=${terminalStatus}`);
+        completion=await persistJobCompletion(job,terminalStatus);
       }
       });
+      // Report/history are durable and the mutation lease is released. Publish
+      // terminal status, SSE completion and idle together without another await.
+      running=null;
+      publishJobCompletion(job,completion);
       }catch(e) {
         if(e.code==='MUTATION_LOCKED'&&!job.startedAt) {
           queue.unshift(job);
           if(!closing)setTimeout(()=>{if(!closing)void drain().catch(error=>{job.finalizationError=error;});},1000).unref();
           break;
         }
+        job.finalizationError=e;
+        job.progress={...job.progress,finalizing:true,error:e.code||e.message};
         throw e;
       }
     }
@@ -1426,6 +1437,9 @@ async function route(req, res) {
       if (TERMINAL_STATUSES.has(job.status)) {
         return json(res, 409, { error: 'job_finished', message: '任务已结束' });
       }
+      // Execution has settled. A late cancel must not overwrite the terminal
+      // snapshot while it is being saved or its lease is being released.
+      if (job.finalizing) return json(res, 200, publicJob(job));
       try { job.controller?.abort(); } catch { /* ignore */ }
       if (job.status === 'queued') { const index=queue.indexOf(job);if(index>=0)queue.splice(index,1);await finalizeJob(job,'cancelled'); }
       else await persistJob(job);

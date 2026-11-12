@@ -10,6 +10,8 @@ import { clearCaches } from '../src/core/maintenance.mjs';
 import { openState } from '../src/core/state.mjs';
 import { startServer } from '../src/server.mjs';
 import { shortPath } from './helpers/windows-path.mjs';
+import { mutationBusy } from '../src/core/mutations.mjs';
+import { requestJson, waitFor, waitForJob } from './helpers/job-lifecycle.mjs';
 
 const rootDir = fileURLToPath(new URL('../', import.meta.url));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -92,30 +94,28 @@ test('removed APIs return 404; normal preview/history stay usable and restart re
 });
 
 test('maintenance rejects in-flight work and blocks new mutations during restart', async t => {
-  const {configFile,videos,file}=await fixture(t);let restarted=false;
+  const {configFile,videos,file,data}=await fixture(t);let restarted=false;
   const srv=await startServer({port:0,configFile,quiet:true,onRestart:()=>{restarted=true;}});
   t.after(()=>srv.close());const base=`http://127.0.0.1:${srv.port}`;
   // Hold a request body open to model another tab writing configuration.
   const http=await import('node:http');
   const held=http.request(base+'/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'}});
-  held.on('error',()=>{});held.write('{');await sleep(30);
+  held.setTimeout(5000,()=>held.destroy(new Error('held request timed out')));
+  held.on('error',()=>{});t.after(()=>held.destroy());held.write('{');
+  await waitFor(()=>mutationBusy(data),'the held request to acquire its write lease');
   assert.equal((await post(base,'/api/maintenance/cache')).status,409);
   assert.equal((await post(base,'/api/maintenance/restart')).status,409);
+  const accepted=once(held,'response');
   held.end(JSON.stringify({kind:'plan',dir:videos,options:{only:[file],downloadSubs:false}}).slice(1));
-  // Done is visible only after report/history persistence; maintenance also
-  // waits for the remaining request lifecycle to become idle as the GUI does.
-  let idle=false;
-  for(let n=0;n<100;n++){
-    const jobs=await (await fetch(base+'/api/jobs')).json();
-    const health=await (await fetch(base+'/api/health')).json();
-    if(jobs.jobs[0]?.status==='done' && !health.running && health.queued===0){idle=true;break;}
-    await sleep(10);
-  }
-  assert.equal(idle,true,'report and history writes must finish before restarting');
+  const [response]=await accepted;let body='';for await(const chunk of response)body+=chunk;
+  assert.equal(response.statusCode,202,body);
+  const job=await waitForJob(base,JSON.parse(body).jobId);assert.equal(job.status,'done',job.error);
+  const health=await requestJson(base,'/api/health');
+  assert.equal(health.running,null);assert.equal(health.queued,0);
+  assert.equal(mutationBusy(data),false,'completion must include release of the write lease');
   assert.equal((await post(base,'/api/maintenance/restart')).status,202);
   assert.equal((await post(base,'/api/jobs',{dir:videos})).status,409);
-  for(let n=0;n<100&&!restarted;n++)await sleep(10);
-  assert.equal(restarted,true);
+  await waitFor(()=>restarted,'the accepted restart callback');
 });
 
 test('real CLI restart changes worker PID on the same port and preserves config and locks', async t => {

@@ -15,6 +15,7 @@ import {createBackup,restoreBackup,recoverRestore} from '../src/core/backup.mjs'
 import {runDirectory,configSignature,withDeadline} from '../src/pipeline.mjs';
 import {startServer} from '../src/server.mjs';
 import {main} from '../src/cli.mjs';
+import {waitForJob} from './helpers/job-lifecycle.mjs';
 const root=path.resolve('tmp/repair-2026-11-11-3e77b77c/fixtures',`integration-${randomUUID()}`);
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const srt='1\n00:00:01,000 --> 00:00:03,000\n这是测试，我们说话\n';
@@ -120,17 +121,18 @@ test('R16/R17/R21 normal same-origin API keeps scope/context and exposes termina
   x.state.putCode('IPX-921',{meta:{titleJa:'Other',maker:'M',actress:['A'],releaseDate:'2026-01-01'}});
   const configFile=path.join(x.dir,'config.json');await fs.writeFile(configFile,JSON.stringify(x.config));const server=await startServer({port:0,configFile,quiet:true});
   const base=`http://127.0.0.1:${server.port}`,get=async p=>(await fetch(base+p)).json(),post=async(p,body)=>{const response=await fetch(base+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return {status:response.status,body:await response.json()};};
-  const wait=async id=>{for(let n=0;n<250;n++){const job=await get('/api/jobs/'+id);if(['done','failed','needs_review','cancelled'].includes(job.status))return job;await pause(10);}throw new Error('job did not converge');};
+  const wait=id=>waitForJob(base,id);
+  const submit=async body=>{const response=await post('/api/jobs',body);assert.equal(response.status,202,JSON.stringify(response.body));return response;};
   try {
     const listed=await post('/api/subtitles/candidates',{file:x.file});assert.equal(listed.status,200);assert.ok(listed.body.candidates.length);
     const candidate=listed.body.candidates[0];assert.equal((await post('/api/subtitles/apply',{file:other,candidate})).status,409);
     x.state.correct(x.file,{maker:{value:'Revision change',locked:true}},0);assert.equal((await post('/api/subtitles/apply',{file:x.file,candidate})).status,409);
     const fresh=await post('/api/subtitles/candidates',{file:x.file});const installed=await post('/api/subtitles/apply',{file:x.file,candidate:fresh.body.candidates[0]});assert.equal(installed.status,200,JSON.stringify(installed.body));assert.equal(await fs.readFile(x.file.replace('.mp4','.srt'),'utf8'),srt);
     const options={only:[x.file,other],force:true,downloadSubs:false,workflow:{covers:false,extraSubtitles:false}};
-    let created=await post('/api/jobs',{kind:'plan',dir:x.videos,options});assert.equal(created.status,202);let job=await wait(created.body.jobId);assert.equal(job.status,'done',job.error);const report=await get('/api/jobs/'+job.id+'/report');
+    let created=await submit({kind:'plan',dir:x.videos,options});let job=await wait(created.body.jobId);assert.equal(job.status,'done',job.error);const report=await get('/api/jobs/'+job.id+'/report');
     const disk=JSON.parse(await fs.readFile(path.join(x.data,'jobs',job.id+'.json'),'utf8'));assert.equal(disk.status,'done');assert.ok(disk.seq>0);assert.equal(disk.reportJson,job.reportJson);assert.deepEqual(JSON.parse(await fs.readFile(job.reportJson,'utf8')).summary,job.summary);
-    created=await post('/api/jobs',{kind:'apply',dir:x.videos,options:{...options,only:[x.file],requirePlan:true,planId:report.planId,planRevision:0}});assert.equal((await wait(created.body.jobId)).status,'needs_review');assert.equal(JSON.parse(await fs.readFile(path.join(x.data,'plans',report.planId+'.json'),'utf8')).state,'preview');assert.equal(await fs.readFile(other,'utf8'),'CCCC');
-    created=await post('/api/jobs',{kind:'apply',dir:x.videos,options:{...options,requirePlan:true,planId:report.planId,planRevision:0}});job=await wait(created.body.jobId);assert.equal(job.status,'done',job.error);assert.equal((await get('/api/jobs/'+job.id+'/report')).results.length,2);
+    created=await submit({kind:'apply',dir:x.videos,options:{...options,only:[x.file],requirePlan:true,planId:report.planId,planRevision:0}});assert.equal((await wait(created.body.jobId)).status,'needs_review');assert.equal(JSON.parse(await fs.readFile(path.join(x.data,'plans',report.planId+'.json'),'utf8')).state,'preview');assert.equal(await fs.readFile(other,'utf8'),'CCCC');
+    created=await submit({kind:'apply',dir:x.videos,options:{...options,requirePlan:true,planId:report.planId,planRevision:0}});job=await wait(created.body.jobId);assert.equal(job.status,'done',job.error);assert.equal((await get('/api/jobs/'+job.id+'/report')).results.length,2);
     x.state.close();const recovery=await post('/api/restore',{recover:true});assert.equal(recovery.status,200);assert.equal(recovery.body.reason,'no_pending_restore');
     const a=server.close(),b=server.close();assert.equal(a,b);await a;
     const before=(await fs.stat(path.join(x.data,'jobs',job.id+'.json'))).mtimeMs;await pause(30);assert.equal((await fs.stat(path.join(x.data,'jobs',job.id+'.json'))).mtimeMs,before);

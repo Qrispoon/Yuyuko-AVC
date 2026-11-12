@@ -6,6 +6,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { EventEmitter } from 'node:events';
+import { spawn } from 'node:child_process';
 import { discoverTestFiles, testArguments, parseTestOptions } from '../tools/lib/test-discovery.mjs';
 import { runTests } from '../tools/test.mjs';
 import { collectDocPaths, invalidDocPaths } from '../tools/lib/doc-paths.mjs';
@@ -66,10 +67,23 @@ test('A10: runner forwards all file arguments without a shell and preserves fail
 
 test('A10: real runner executes only its own one-file synthetic suite', async t => {
   const root = await runnerFixture(t);
-  assert.equal(await runTests({ root, output: () => {} }), 0);
+  const run = async () => {
+    let output = '';
+    const status = await runTests({ root, output: () => {}, spawnProcess: (exe, args, options) => {
+      const child = spawn(exe, args, { ...options, stdio: ['ignore', 'pipe', 'pipe'] });
+      child.stdout.on('data', chunk => { output += chunk; });
+      child.stderr.on('data', chunk => { output += chunk; });
+      return child;
+    } });
+    return { status, output };
+  };
+  const passed = await run();
+  assert.equal(passed.status, 0, passed.output);
   assert.equal(await fs.readFile(path.join(root, 'executed.marker'), 'utf8'), 'executed');
   await fs.writeFile(path.join(root, 'tests', 'synthetic.test.mjs'), "import test from 'node:test'; test('synthetic intentional failure', () => { throw new Error('expected fixture failure'); });\n");
-  assert.notEqual(await runTests({ root, output: () => {} }), 0);
+  const failed = await run();
+  assert.notEqual(failed.status, 0, failed.output);
+  assert.match(failed.output, /expected fixture failure/);
 });
 
 test('A11: only the explicitly declared audit date template is exempt', async () => {

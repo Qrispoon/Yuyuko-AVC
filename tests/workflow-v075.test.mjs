@@ -10,6 +10,7 @@ import {createSubtitleCatalog} from '../src/subs/manual.mjs';
 import {createContext,processFile,runDirectory} from '../src/pipeline.mjs';
 import {createBackup,restoreBackup} from '../src/core/backup.mjs';
 import {startServer} from '../src/server.mjs';
+import {requestJson,waitForJob} from './helpers/job-lifecycle.mjs';
 
 const srt='1\n00:00:01,000 --> 00:00:04,000\n这是一个测试，我们说话\n\n2\n00:00:05,000 --> 00:00:08,000\n这些时间请认真看\n';
 async function setup(t){const root=await fs.mkdtemp(path.join(os.tmpdir(),'avc-075-'));const videos=path.join(root,'videos');await fs.mkdir(videos);const file=path.join(videos,'IPX-920.mp4');await fs.writeFile(file,'test-video');const config={paths:{dataDir:path.join(root,'data')},scan:{videoExtensions:['.mp4']},rename:{template:'{code} {title}'},network:{proxy:'',defaultRoute:'direct',timeoutMs:300,retry:0,minIntervalMs:0},media:{probeDuration:'off'},metadata:{r18:false},subs:{sources:['local'],localDirs:[root],extraLangs:[],fit:{mode:'none'}},covers:{download:false,embed:false},fs:{enabled:true,allowedRoots:[root]}};const state=openState(path.join(config.paths.dataDir,'state.db'));t.after(async()=>{state.close();await fs.rm(root,{recursive:true,force:true});});return {root,videos,file,config,state};}
@@ -92,8 +93,9 @@ test('offline report escapes untrusted names, distinguishes preview from actual 
 });
 test('server plan/apply freezes chosen metadata, rejects stale revisions, and exports actual readable reports',async t=>{
  const {root,file,videos,config,state}=await setup(t);state.putCode('IPX-920',{meta:{titleJa:'Frozen',maker:'M',actress:['A'],releaseDate:'2026-01-01'}});const configFile=path.join(root,'config.json');await fs.writeFile(configFile,JSON.stringify(config));const srv=await startServer({port:0,configFile,quiet:true});
- const get=async p=>(await fetch(`http://127.0.0.1:${srv.port}${p}`)).json(),post=async(p,b)=>(await fetch(`http://127.0.0.1:${srv.port}${p}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json();
- const wait=async id=>{for(let n=0;n<100;n++){const j=await get('/api/jobs/'+id);if(['done','failed','needs_review'].includes(j.status))return j;await new Promise(r=>setTimeout(r,10));}throw new Error('timeout');};
+ const base=`http://127.0.0.1:${srv.port}`,get=p=>requestJson(base,p);
+ const post=(p,body)=>requestJson(base,p,{method:'POST',body,status:202});
+ const wait=id=>waitForJob(base,id);
  try {
   let job=await post('/api/jobs',{kind:'plan',dir:videos,options:{only:[file],force:true,downloadSubs:false,workflow:{covers:false,extraSubtitles:false}}});assert.equal((await wait(job.jobId)).status,'done');let rep=await get('/api/jobs/'+job.jobId+'/report');assert.ok(rep.planId);
   state.correct(file,{maker:{value:'New maker',locked:true}},0);job=await post('/api/jobs',{kind:'apply',dir:videos,options:{only:[file],force:true,downloadSubs:false,workflow:{covers:false,extraSubtitles:false},requirePlan:true,planId:rep.planId,planRevision:0}});assert.equal((await wait(job.jobId)).status,'needs_review');assert.ok(await fs.stat(file));

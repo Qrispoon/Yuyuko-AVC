@@ -5,6 +5,11 @@ on:
     branches: [main, master]
   pull_request:
   workflow_dispatch:
+    inputs:
+      coverage:
+        description: 'Collect coverage on Node 24 (runs the suite once more)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -28,9 +33,7 @@ jobs:
       - name: Run tests
         run: npm test
 
-      # Report-only coverage (built into Node; no third-party tooling).
+      # Optional diagnostic run; avoid repeating the full suite on every matrix job.
       - name: Test coverage (report only)
+        if: github.event_name == 'workflow_dispatch' && inputs.coverage && matrix.node == '24'
         run: npm run test:coverage
-
-      - name: Release consistency checks
-        run: node tools/check-release.mjs

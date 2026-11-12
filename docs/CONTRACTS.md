@@ -564,6 +564,6 @@ v2 `mux-create-output` journal.items 记录 output/source/sha256/size/phase 和�
 - 固定计划绑定 dir、实际集合、only、overrides、force、downloadSubs、workflow 及配置/文件修订。变化在消费计划前返回 needs_review。候选 token 绑定文件、记录修订、来源和指纹，过期/错文件/改候选拒绝；界面重绘、关闭和改番号清除旧候选，迟到结果丢弃。
 - HTTP parser 只在完整 framing 后返回成功；截断、CL/TE 歧义、非法 chunk/trailer、超预算均失败。每次连接拥有 raw/TLS/socket/timer/listener，失败先清理并等待关闭才重试；此处只以纯内存 parser 和 fake socket/clock 验证。
 - 时间轴按整数总毫秒转换，进位完整，只替换 cue 时间轴行，正文时间戳不修改。所有语言的最终结构/时序在备份和写入前校验。subtitlecat 搜索行和每个下载文件名都要求完整番号 token 等价。
-- 任务快照入队前复制，按文件序列保存；报告先落盘，终态快照成功后才公开终态/SSE。保存失败保持未完成且错误可见，不能吞掉并宣称成功。`close()` 共用保存屏障并拒绝后续写入。
+- 任务快照入队前复制，按文件序列保存；报告和终态快照在数据目录写入锁内保存，释放 lease 后才同时公开终态/SSE 和空闲状态。保存或释放 lease 失败保持未完成且错误可见；执行已结束但仍在收尾时，迟到的取消请求不再覆盖已保存的终态。`close()` 共用保存屏障并拒绝后续写入。
 
 `src/net/upload.mjs` 的 upload 是单次有界 POST，不复用会重试 / 跟随跳转的 GET 网络层。`src/sources/frame-search.mjs` 的 searchFrame 接收原始图片字节及私有配置，返回 `{results:[{code,similarity,timestamps}]}`；结果无缩略图 / 远程 HTML。公开设置不返回 secret，截图与结果不持久化。接口详见 SERVICE_API §20。
