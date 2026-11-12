@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 220" fill="none">
+  <defs>
+    <radialGradient id="petal"><stop stop-color="#ffe9f2"/><stop offset=".7" stop-color="#f7b7d1"/><stop offset="1" stop-color="#ed90b5"/></radialGradient>
+    <g id="bloom">
+      <g fill="url(#petal)" stroke="#dc83a8" stroke-width=".35">
+        <path id="p" d="M0 1C-14-3-14-19-5-19L0-16 5-19C14-19 14-3 0 1Z"/>
+        <use href="#p" transform="rotate(72)"/><use href="#p" transform="rotate(144)"/><use href="#p" transform="rotate(216)"/><use href="#p" transform="rotate(288)"/>
+      </g>
+      <circle r="3.6" fill="#d66c98"/><g fill="#f6dc9c"><circle cx="0" cy="-5" r="1.1"/><circle cx="4.8" cy="-1.5" r="1.1"/><circle cx="3" cy="4" r="1.1"/><circle cx="-3" cy="4" r="1.1"/><circle cx="-4.8" cy="-1.5" r="1.1"/></g>
+    </g>
+  </defs>
+  <g stroke="#9c6c79" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M432 12C370 47 354 79 295 96S196 116 120 156" stroke-width="7"/>
+    <path d="M364 64C321 58 298 45 258 24M307 92C280 121 269 144 233 163M259 107C221 91 204 80 171 81M213 117C186 139 181 164 161 191M159 137C125 126 96 127 64 136" stroke-width="3.2"/>
+    <path d="M313 48 303 15M280 36 250 44M280 121 301 142M263 145 242 131M224 92 222 62M196 83 169 60M188 148 208 166M148 133 141 105M101 130 83 109M85 131 61 155M130 151 107 177" stroke-width="1.8"/>
+  </g>
+  <g fill="#b7c6a1" opacity=".8"><path d="M332 75Q321 50 303 55Q305 74 332 75Z"/><path d="M242 111Q250 87 266 88Q267 104 242 111Z"/><path d="M172 158Q148 153 144 168Q162 176 172 158Z"/><path d="M89 133Q66 119 58 129Q67 143 89 133Z"/></g>
+  <use href="#bloom" transform="translate(359 69) rotate(10) scale(.83)"/>
+  <use href="#bloom" transform="translate(313 45) rotate(-15) scale(.72)"/>
+  <use href="#bloom" transform="translate(298 15) rotate(15) scale(.58)"/>
+  <use href="#bloom" transform="translate(258 27) rotate(-22) scale(.8)"/>
+  <use href="#bloom" transform="translate(247 48) rotate(12) scale(.55)"/>
+  <use href="#bloom" transform="translate(299 97) rotate(18) scale(1.05)"/>
+  <use href="#bloom" transform="translate(301 144) rotate(-12) scale(.67)"/>
+  <use href="#bloom" transform="translate(263 145) rotate(17) scale(.92)"/>
+  <use href="#bloom" transform="translate(234 165) rotate(-8) scale(.64)"/>
+  <use href="#bloom" transform="translate(223 66) rotate(5) scale(.7)"/>
+  <use href="#bloom" transform="translate(202 92) rotate(-15) scale(.92)"/>
+  <use href="#bloom" transform="translate(169 64) rotate(22) scale(.54)"/>
+  <use href="#bloom" transform="translate(174 125) rotate(11) scale(.8)"/>
+  <use href="#bloom" transform="translate(208 166) rotate(0) scale(.55)"/>
+  <use href="#bloom" transform="translate(161 188) rotate(-18) scale(.72)"/>
+  <use href="#bloom" transform="translate(141 109) rotate(15) scale(.6)"/>
+  <use href="#bloom" transform="translate(121 149) rotate(-10) scale(.88)"/>
+  <use href="#bloom" transform="translate(83 111) rotate(20) scale(.53)"/>
+  <use href="#bloom" transform="translate(63 137) rotate(-14) scale(.65)"/>
+  <use href="#bloom" transform="translate(60 157) rotate(16) scale(.5)"/>
+  <use href="#bloom" transform="translate(106 177) rotate(0) scale(.52)"/>
+  <g fill="#ef9abb"><ellipse cx="43" cy="178" rx="4" ry="7" transform="rotate(35 43 178)"/><ellipse cx="213" cy="203" rx="3" ry="5" transform="rotate(-25 213 203)"/><ellipse cx="342" cy="167" rx="3" ry="6" transform="rotate(50 342 167)"/></g>
+</svg>

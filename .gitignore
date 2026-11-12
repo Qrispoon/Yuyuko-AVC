@@ -1,0 +1,85 @@
+# ============================================================
+# AVC 补全器 — .gitignore
+# 仓库只提交源码/文档/模板；本地素材、运行数据、构建产物一律不入库。
+# ============================================================
+
+# ---------- 本机配置（程序会把界面设置写回 config.local.json）----------
+config.local.json
+config.json
+*.local.json
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.pfx
+*.p12
+
+# ---------- 运行数据（首次运行自动创建）----------
+data/
+out/
+logs/
+*.log
+
+# ---------- 测试夹具：第三方页面/字幕快照与真实文件名样例，只在本机使用，不随仓库分发 ----------
+/fixtures/
+/tests/fixtures/
+
+# ---------- 真实数据截图（脱敏后再放 docs/ 并显式提交）----------
+web/preview-*.png
+docs/screenshots/local/
+screenshots/local/
+
+# ---------- 构建产物（Release 附件，不进仓库）----------
+dist/
+release/
+build/
+packages/
+node-runtime/
+/pack/
+coverage/
+.nyc_output/
+*.lcov
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tar.xz
+*.tgz
+SHA256SUMS.txt
+
+# ---------- 数据库与诊断副本（包括自定义数据目录）----------
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
+
+# ---------- 内部审查证据与演示 QA 产物 ----------
+# 内部审查原件含本机路径与临时证据；公开摘要单独维护。
+/docs/audits/
+/demos/*/review/
+# 未接入产品的独立场景实验，含原始输入、生成资产和本机工具配置。
+/demos/autumn-ravine/
+/demos/moonlit-blossoms/
+/tmp-effects-qa-*/
+
+# ---------- Node ----------
+node_modules/
+npm-debug.log*
+
+# ---------- 编辑器 / 操作系统 ----------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+*.tmp
+*.bak
+.cache/
+tmp/

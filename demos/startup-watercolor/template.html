@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN" class="preparing">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f2eb">
+  <title>AVC · 一笔春色 · 启动动画预览</title>
+  <link rel="icon" href="data:,">
+  <link rel="preload" as="image" href="assets/painting.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="../../web/startup-art.js" defer></script>
+  <script src="main.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="./index.html" aria-label="重新打开预览"><span class="seal" aria-hidden="true">春</span><span>AVC<span class="wordmark-sub">A QUIET BEGINNING</span></span></a>
+    <span class="edition">STARTUP STUDY <span>01 / 幽々子</span></span>
+  </header>
+  <main class="composition" id="composition" aria-busy="true">
+    <section class="editorial">
+      <p class="eyebrow"><span></span> 白玉楼的春日</p>
+      <h1>一笔<br>春色</h1>
+      <p class="roman">A moment, in bloom.</p>
+      <p class="description">从一缕线条，到满纸春色。<br>让颜色，沿着笔迹慢慢盛开。</p>
+      <nav class="chapters" aria-label="绘制阶段">
+        <button type="button" class="chapter active" data-time="0" aria-current="step"><span>01</span><span>落笔 · 逐线勾勒</span><i aria-hidden="true"></i></button>
+        <button type="button" class="chapter" data-time="2.9"><span>02</span><span>入色 · 水彩晕染</span><i aria-hidden="true"></i></button>
+        <button type="button" class="chapter" data-time="5.5"><span>03</span><span>叠映 · 光影浮现</span><i aria-hidden="true"></i></button>
+        <button type="button" class="chapter" data-time="8.0"><span>04</span><span>成画 · 春意渐浓</span><i aria-hidden="true"></i></button>
+      </nav>
+      <div class="readiness" role="status" aria-live="polite"><span class="status-dot"></span><span id="status">正在备好画卷…</span></div>
+      <p class="demo-note" id="demo-note">独立动画预览 · 完成后停留，供你细看</p>
+    </section>
+    <figure class="art-space">
+      <div class="art-holder" id="art-holder" role="img" aria-label="西行寺幽幽子的水彩绘制过程：逐笔描线、遮罩晕染与精细成画">
+        <div class="study-layer" id="study-layer"><!-- ORIGINAL_STUDY --></div>
+        <div class="finish-layer" id="finish-layer"><img id="painting" src="assets/painting.png" width="915" height="1330" alt="" decoding="async" fetchpriority="high"></div>
+        <div class="preparation" id="preparation" role="status"><span></span><p>正在展开画卷</p></div>
+      </div>
+      <figcaption><span>西行寺幽々子</span><i></i><span>SAIGYOUJI YUYUKO</span></figcaption>
+      <p class="art-credit">原画：sai · 东方 Project</p>
+    </figure>
+  </main>
+  <section class="player" aria-label="预览播放控制">
+    <div class="transport"><button type="button" class="play" id="play" aria-label="暂停" aria-pressed="true"><span id="play-symbol">Ⅱ</span></button><button type="button" class="replay" id="replay" aria-label="从头重播">重播</button></div>
+    <div class="timeline-block"><div class="timeline-label"><span id="phase">正在展开画卷</span><span><span id="elapsed">00.0</span> <i>/</i> 8.6 s</span></div><label class="sr-only" for="timeline">绘制进度</label><input type="range" id="timeline" min="0" max="8.6" step="0.01" value="0"></div>
+    <label class="speed-label"><span class="sr-only">播放速度</span><select id="speed"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option></select></label>
+    <span class="keyboard-hint">空格 暂停 / 播放</span>
+  </section>
+  <footer><span>AVC · 一笔春色</span><span>INK, PIGMENT & A LITTLE PATIENCE.</span></footer>
+</body>
+</html>

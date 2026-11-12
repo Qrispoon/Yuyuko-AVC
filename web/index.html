@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AVC 补全器</title>
+<link rel="icon" type="image/jpeg" href="assets/yuyuko-avatar.jpg" />
+<script src="effects-bootstrap.js"></script>
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="appearance.css" />
+<link rel="stylesheet" href="updates.css" />
+<link rel="stylesheet" href="preferences.css" />
+<link rel="stylesheet" href="workflow.css" />
+<link rel="stylesheet" href="assembly.css" />
+<link rel="stylesheet" href="effects.css" />
+</head>
+<body>
+<div class="effects-stage" id="effectsStage" aria-hidden="true">
+  <div class="effects-scene" data-scene="work"><div class="effects-scene-fill"></div><div class="effects-scene-art"></div><div class="effects-scene-veil"></div><div class="effects-light"></div><div class="effects-atmosphere"></div></div>
+  <div class="effects-scene" data-scene="history"><div class="effects-scene-fill"></div><div class="effects-scene-art"></div><div class="effects-scene-veil"></div><div class="effects-light"></div><div class="effects-atmosphere"></div></div>
+  <div class="effects-scene" data-scene="assembly"><div class="effects-scene-fill"></div><div class="effects-scene-art"></div><div class="effects-scene-veil"></div><div class="effects-light"></div><div class="effects-atmosphere"></div></div>
+  <div class="effects-scene" data-scene="settings"><div class="effects-scene-fill"></div><div class="effects-scene-art"></div><div class="effects-scene-veil"></div><div class="effects-light"></div><div class="effects-atmosphere"></div></div>
+</div>
+<div class="petals" id="petals" aria-hidden="true"></div>
+<div class="sakura-branch" aria-hidden="true"><img src="assets/sakura-branch.svg" alt="" /></div>
+
+<div class="shell">
+  <header>
+    <div class="brand-group">
+      <button type="button" class="mark sakura-trigger" id="sakuraEgg" aria-label="西行寺幽幽子头像，连续点击三次触发樱花雨" title="连续轻点三下，下一场樱花雨"><img class="brand-avatar" src="assets/yuyuko-avatar.jpg" alt="" aria-hidden="true" /></button>
+      <a class="brand" href="/">AVC 补全器</a>
+      <button type="button" class="version-notes" id="ver" data-updates-open aria-haspopup="dialog" aria-controls="updatesDialog" title="查看从初版到现在的更新日志">v0.8.1</button>
+    </div>
+    <span class="pill" id="pill" aria-live="polite"><i></i>连接中…</span>
+    <span class="grow"></span>
+    <nav class="tabs" id="tabs">
+      <button class="tab on" data-view="work">工作台</button>
+      <button class="tab" data-view="history">历史与撤销</button>
+      <button class="tab" data-view="assembly">超级拼装</button>
+      <button class="tab" data-view="settings">设置</button>
+    </nav>
+    <button class="iconbtn" id="btnTheme" title="切换主题（自动/浅色/深色）">主题：自动</button>
+    <button type="button" class="iconbtn effects-button" id="btnEffects" aria-pressed="false" aria-controls="effectsStage" title="开启更多动效：玻璃界面与氛围背景"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m12 3 2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4Z"/><path d="M20 2v4M18 4h4"/></svg><span class="effects-button-label">更多动效（实验中）</span><i class="effects-button-state" aria-hidden="true"></i></button>
+    <button class="iconbtn" id="btnRefresh" title="刷新状态">刷新</button>
+  </header>
+
+  <section id="view-assembly" class="hidden" data-no-i18n></section>
+  <!-- ================= 工作台 ================= -->
+  <section id="view-work">
+    <div class="hero">
+      <div class="blob"></div>
+      <svg class="sparkle" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5 13.9 11.4 12 17l-1.9-5.6L4.5 9.5 10.1 7.6Z"/></svg>
+      <h1>给视频目录补全<em>元数据</em>：标题、出演、日期、厂牌、封面和<em>中文字幕</em></h1>
+      <p>扫描 → 预演 → 应用。应用前不会改动媒体文件；历史中可撤销文件名和有恢复依据的旁车，嵌入的封面会保留。</p>
+      <div class="dirbar">
+        <div class="input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
+          <input id="dir" type="text" placeholder="D:\Videos  —— 也可以点右侧「选择目录」" autocomplete="off" spellcheck="false" />
+        </div>
+        <button class="btn" id="btnPick">浏览目录…</button>
+        <button class="btn" id="btnScan">扫描</button>
+        <button class="btn pri" id="btnPlan">开始预演</button>
+      </div>
+    </div>
+
+    <div class="steps" id="steps">
+      <span class="step" data-step="1"><span class="dot">1</span>扫描目录</span><span class="sep"></span>
+      <span class="step" data-step="2"><span class="dot">2</span>预演确认</span><span class="sep"></span>
+      <span class="step" data-step="3"><span class="dot">3</span>应用改名</span>
+    </div>
+
+    <div class="grid">
+      <div class="listcol">
+        <!-- 预演完成后的变更预览卡（F2） -->
+        <div class="plan-summary hidden" id="planSummary"></div>
+        <div class="list" id="list" tabindex="0">
+          <!-- F10 工具条：搜索 / 状态筛选 / 排序 / 批量勾选 -->
+          <div class="flt-bar hidden" id="fltBar">
+            <div class="flt-row">
+              <input type="search" class="flt-search" id="fltSearch" placeholder="搜索文件名 / 番号 / 标题 / 女优…" autocomplete="off" spellcheck="false" />
+              <label class="flt-sort">排序
+                <select id="fltSort">
+                  <option value="name">文件名</option>
+                  <option value="code">番号</option>
+                  <option value="size">大小</option>
+                  <option value="status">状态</option>
+                </select>
+              </label>
+              <span class="grow"></span>
+              <button class="btn sm" id="selFiltered" title="把勾选替换为当前筛选结果里的文件">只选筛选结果</button>
+              <button class="btn sm" id="selFailed" title="只勾选失败的文件（跨筛选保留）">只选失败</button>
+              <button class="btn sm" id="retryFailed" title="筛选失败项并直接开始预演">重试失败项</button>
+              <button class="btn sm" id="fltReset" title="清空搜索、状态与排序并清除本地记忆">重置筛选</button>
+              <button class="btn sm" id="fltClear" title="清空搜索词与状态筛选">清除筛选</button>
+            </div>
+            <div class="flt-status" id="fltStatus">
+              <button type="button" class="flt-chip" data-status="error">失败</button>
+              <button type="button" class="flt-chip" data-status="no_subtitle">无中字</button>
+              <button type="button" class="flt-chip" data-status="unresolved">未确认</button>
+              <button type="button" class="flt-chip" data-status="no_code">未识别</button>
+              <button type="button" class="flt-chip" data-status="out_of_scope">范围外</button>
+              <button type="button" class="flt-chip" data-status="skipped">已跳过</button>
+              <button type="button" class="flt-chip" data-status="scanned">已预演</button>
+            </div>
+            <div class="flt-row flt-row2">
+              <label class="selall"><input type="checkbox" id="chkAll" /> 全选</label>
+              <span class="flt-counts" id="fltCounts">已选 <b>0</b> / 筛选 0 / 全部 0</span>
+              <span class="flt-summary" id="selSummary">已选 0 · 总大小 0 B · 预计耗时 —</span>
+              <span class="grow"></span>
+              <button class="btn sm" id="densityToggle" title="切换列表密度（舒适/紧凑）">舒适</button>
+              <span class="flt-colswrap">
+                <button class="btn sm" id="colsBtn" title="选择列表行内显示的信息列">列</button>
+                <div class="flt-cols hidden" id="colsPanel">
+                  <label><input type="checkbox" id="colDate" checked /> 日期</label>
+                  <label><input type="checkbox" id="colMaker" checked /> 厂牌</label>
+                  <label><input type="checkbox" id="colDuration" checked /> 时长</label>
+                  <label><input type="checkbox" id="colSize" checked /> 大小</label>
+                </div>
+              </span>
+              <button class="btn sm" id="selInvert">反选</button>
+              <button class="btn sm" id="selNone">全不选</button>
+            </div>
+          </div>
+          <div class="flt-rows" id="fltRows">
+            <div class="empty" id="empty">还没有扫描结果。输入或选择一个视频目录，点击「扫描」。</div>
+          </div>
+          <div class="flt-more hidden" id="fltMore"></div>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="side-scroll" tabindex="0" role="region" aria-label="工作面板，可滚动">
+        <div class="card">
+          <h3>本次进度 <span class="note" id="jobState"></span><span class="note hidden" id="queueInfo"></span><span class="note hidden" id="etaInfo"></span></h3>
+          <div class="ringwrap">
+            <div class="ring">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <defs>
+                  <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#f9a8d4"/><stop offset="55%" stop-color="#ec4899"/><stop offset="100%" stop-color="#be185d"/>
+                  </linearGradient>
+                </defs>
+                <circle class="track" cx="60" cy="60" r="45"/>
+                <circle class="fill" id="ringFill" cx="60" cy="60" r="45" stroke-dashoffset="283"/>
+              </svg>
+              <span class="txt" id="ringTxt">0%</span>
+            </div>
+            <div class="kpis">
+              <div><b id="kDone">0 / 0</b>已处理</div>
+              <div><b id="kSub">0</b>字幕命中</div>
+              <div><b id="kTime">—</b>耗时</div>
+            </div>
+          </div>
+          <div class="bar"><i id="bar"></i></div>
+        </div>
+
+        <!-- 本轮任务选项（F5） -->
+        <div class="card">
+          <h3>本轮选项 <span class="note">下次任务生效</span></h3>
+          <div class="opts">
+            <label class="opt"><input class="check" type="checkbox" id="optForce" /> 强制重跑（忽略已完成状态）</label>
+            <label class="opt"><input class="check" type="checkbox" id="optDownloadSubs" checked /> 下载字幕</label>
+            <label class="opt" title="任务结束（完成/失败/取消）时在系统通知里提示"><input class="check" type="checkbox" id="optNotify" /> 任务完成时通知（浏览器通知）</label>
+            <div class="opt-row">
+              <span>并发</span>
+              <select id="optConcurrency">
+                <option value="1">1（最稳）</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4（最快）</option>
+              </select>
+            </div>
+            <div class="opt-row">
+              <span>前 N 条</span>
+              <input id="optLimit" type="number" min="0" max="9999" step="1" value="0" />
+              <span class="note">0 = 全部</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>字幕来源</h3>
+          <div id="subStats"><div class="empty" style="padding:10px">暂无数据</div></div>
+        </div>
+
+        <div class="card logcard">
+          <div class="loghead"><span>实时日志</span><span class="grow"></span><label class="flt-logerr" title="只显示错误行"><input type="checkbox" id="logErrOnly" /> 只看错误</label><button class="iconbtn hidden" id="btnResync" title="事件流断开时重新同步后端状态">重新同步</button><span class="live" id="liveDots"><i></i>空闲</span></div>
+          <div class="logbody" id="log">等待任务…</div>
+        </div>
+
+        </div>
+        <div class="card side-actions">
+          <h3>确认后</h3>
+          <button class="btn solid" id="btnApply" style="width:100%" disabled>应用（改名 + 字幕）</button>
+          <div style="display:flex; gap:8px; margin-top:9px">
+            <button class="btn sm" id="btnCancel" style="flex:1" disabled>取消任务</button>
+            <button class="btn sm" id="btnExport" style="flex:1" disabled>导出报告</button>
+          </div>
+          <p class="note" id="applyHint" style="margin:9px 0 0">先完成一次「预演」才能应用。</p>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 未识别（单独一区，不计入已处理） -->
+    <section class="manual-panel hidden" id="manualPanel">
+      <div class="manual-head">
+        <strong>未识别</strong>
+        <span class="manual-badge" id="manualCount">0</span>
+        <span class="note">这些文件没有可用番号；可以手动补番号后一起预演。</span>
+        <span class="grow"></span>
+        <button class="btn sm" id="btnManualPlan">补番号并预演</button>
+      </div>
+      <div class="manual-list" id="manualList"></div>
+    </section>
+  </section>
+
+  <!-- ================= 历史 ================= -->
+  <section id="view-history" class="hidden">
+    <div class="panel">
+      <h2>任务记录</h2>
+      <p class="hint">最近的任务与结果。点「导出报告」可下载完整 JSON。</p>
+      <div class="hist-filter">
+        <input type="search" id="histSearch" placeholder="按目录关键字筛选…" autocomplete="off" spellcheck="false" />
+        <select id="histStatus">
+          <option value="">全部状态</option>
+          <option value="done">已完成</option>
+          <option value="aborted">已中止</option>
+          <option value="cancelled">已取消</option>
+          <option value="failed">失败</option>
+          <option value="queued">排队中</option>
+          <option value="running">运行中</option>
+          <option value="needs_review">待复核</option>
+        </select>
+        <span class="note" id="histCount"></span>
+      </div>
+      <div class="jobs" id="jobs"><div class="empty">暂无任务</div></div>
+    </div>
+    <div class="panel">
+      <h2>重命名日志（journal）</h2>
+      <p class="hint">每次「应用」生成一份 journal；撤销按历史证据恢复文件名和旁车。后来修改的文件会保留并提示冲突，嵌入的封面不会移除。</p>
+      <div class="jobs" id="journals"><div class="empty">暂无 journal</div></div>
+    </div>
+  </section>
+
+  <!-- ================= 设置 ================= -->
+  <section id="view-settings" class="hidden">
+    <nav class="settings-menu" aria-label="设置分类">
+      <a href="#appearance-language" class="settings-menu-current">外观与语言</a>
+      <a href="#network-settings">代理与网络</a>
+      <a href="#media-settings">命名与字幕</a>
+      <a href="#backupPanel">数据与备份</a>
+      <a href="#maintenancePanel">缓存与维护</a>
+    </nav>
+    <section class="panel ui-preferences" id="appearance-language" aria-labelledby="uiPreferencesTitle">
+      <div class="ui-heading"><div><p class="ui-eyebrow">PERSONALIZE</p><h2 id="uiPreferencesTitle">外观与语言</h2>
+      <p class="hint">调整阅读大小与界面语言，让每一次整理都更舒适。</p></div><span class="ui-heading-mark" aria-hidden="true">Aa</span></div>
+      <div class="ui-preference-grid">
+        <div class="ui-controls">
+          <div class="field"><label for="uiLanguage">界面语言</label>
+            <select id="uiLanguage" aria-describedby="uiLanguageHelp"><option value="zh-CN">简体中文</option><option value="en">English</option></select>
+            <span class="desc" id="uiLanguageHelp">即时切换界面文案，文件名、元数据与字幕内容保留原文。</span>
+          </div>
+          <div class="field"><label for="uiFontSize" class="ui-font-label">字体大小 <output id="uiFontValue" for="uiFontSize">14 px · 100%</output></label>
+            <div class="ui-font-slider"><button type="button" class="btn sm" id="uiFontDecrease" aria-label="减小字体">A−</button><input type="range" id="uiFontSize" min="12" max="20" step="1" value="14" aria-describedby="uiFontHelp" /><button type="button" class="btn sm" id="uiFontIncrease" aria-label="增大字体">A+</button></div>
+            <div class="ui-font-presets" role="group" aria-label="字号预设"><button type="button" data-font-size="12">小</button><button type="button" data-font-size="14" aria-pressed="true">默认</button><button type="button" data-font-size="16">大</button><button type="button" data-font-size="18">特大</button></div>
+            <span class="desc" id="uiFontHelp">12–20 px，页面、菜单与弹窗同步缩放；也可使用方向键微调。</span>
+          </div>
+        </div>
+        <aside class="ui-reading-preview" aria-label="字体预览"><span class="ui-preview-label">阅读预览</span><h3 data-no-i18n>「反魂蝶 -八分咲-」</h3><p data-no-i18n>我永远喜欢西行寺幽幽子</p><div class="ui-preview-meta"><span>元数据已就绪</span><span>字幕已匹配</span></div><div class="ui-preview-line"></div><small>粉樱依旧，阅读更合心意。</small></aside>
+      </div>
+      <div class="ui-preference-footer"><span id="uiPreferenceStatus" role="status" aria-live="polite"></span><button type="button" class="btn sm" id="uiReset">恢复语言与字号默认值</button></div>
+    </section>
+    <div class="panel" id="network-settings">
+      <h2>代理与网络</h2>
+      <p class="hint">javbus 需要代理；manko 后端与字幕 CDN 通常可直连。留空表示不走代理。</p>
+      <div class="field">
+        <label for="setProxy">HTTP 代理</label>
+        <input id="setProxy" type="text" placeholder="http://127.0.0.1:7890" spellcheck="false" />
+        <span class="desc">例如 http://127.0.0.1:7890（代理软件的 HTTP 端口）</span>
+      </div>
+      <button class="btn pri" id="btnSaveNet">保存网络设置</button>
+    </div>
+
+    <div class="panel">
+      <h2 id="media-settings">命名与字幕</h2>
+      <p class="hint">模板占位符：{code} {title} {actress} {date} {maker}</p>
+      <div class="field">
+        <label for="setTpl">命名模板</label>
+        <input id="setTpl" type="text" spellcheck="false" />
+        <span class="desc">默认 {code} {title} [{actress}]</span>
+      </div>
+      <div class="field">
+        <label>字幕源优先级（勾选启用；按从上到下尝试；点 ↑↓ 调整）</label>
+        <div class="srclist" id="srcOrder"></div>
+        <span class="desc">至少启用一个源。每个源会收集多个候选，按「时长贴合度 → 简体 → cue 数」自动选最合适的一条。</span>
+      </div>
+      <div class="field">
+        <label for="setLocalDirs">本地字幕目录（每行一个，可留空）</label>
+        <textarea id="setLocalDirs" rows="2" spellcheck="false" placeholder="D:\Subtitles"></textarea>
+        <span class="desc">local 源会在这里按番号找 .srt（递归 2 层），用于已有字幕库</span>
+      </div>
+      <div class="field">
+        <label for="setSubcatLimit">subtitlecat 候选上限</label>
+        <select id="setSubcatLimit">
+          <option value="1">1（最快，只取第一个中文版本）</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4（默认）</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+          <option value="12">12（最全，最慢）</option>
+        </select>
+        <span class="desc">subtitlecat 需要逐个打开详情页探测，数值越大越慢、候选越全；结果多的片目每条候选约 2–3 秒</span>
+      </div>
+      <div class="field">
+        <label for="setFit">时间校正</label>
+        <select id="setFit">
+          <option value="auto">auto（保守：只有字幕超出片长时才缩放）</option>
+          <option value="scale">scale（总是线性缩放到片长）</option>
+          <option value="shift">shift（整体平移，±90 秒内）</option>
+          <option value="none">none（不校正）</option>
+        </select>
+        <span class="desc">片长来自元数据；安装 ffmpeg 后可改用 ffprobe 实测片长</span>
+      </div>
+      <div class="field">
+        <label for="setProbeDuration">片长探测（media.probeDuration）</label>
+        <select id="setProbeDuration">
+          <option value="auto">auto（有 ffprobe 时实测片长）</option>
+          <option value="off">off（只用元数据片长）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>多语言附加字幕（subs.extraLangs）</label>
+        <div class="checks">
+          <label><input class="check" type="checkbox" id="setExtraZhTw" /> 繁体中文（zh-TW）</label>
+          <label><input class="check" type="checkbox" id="setExtraEn" /> 英文（en）</label>
+          <label><input class="check" type="checkbox" id="setExtraKo" /> 韩文（ko）</label>
+        </div>
+        <span class="desc">主字幕安装成功后，额外下载对应语言并保存为 &lt;视频名&gt;.&lt;lang&gt;.srt（仅「应用」时生效）</span>
+      </div>
+      <div class="field">
+        <label>元数据源 r18.dev（metadata.r18）</label>
+        <label class="opt" style="font-weight:400;color:var(--ink2);font-size:calc(13px * var(--font-scale,1))"><input class="check" type="checkbox" id="setR18" /> javbus/manko 失败时尝试 r18.dev（通常需要代理）</label>
+      </div>
+      <div class="field">
+        <label>封面（poster）</label>
+        <div class="checks">
+          <label><input class="check" type="checkbox" id="setCoverDownload" /> 下载封面到视频旁（同名 .jpg）</label>
+          <label><input class="check" type="checkbox" id="setCoverPoster" /> 单视频目录额外写 poster.jpg</label>
+          <label><input class="check" type="checkbox" id="setCoverEmbed" /> 嵌入视频内（需 ffmpeg，耗时较长）</label>
+        </div>
+        <span class="desc" id="ffmpegStatus">ffmpeg 状态检测中…</span>
+      </div>
+      <div class="field">
+        <label for="setData">数据目录</label>
+        <input id="setData" type="text" spellcheck="false" />
+        <span class="desc">状态库、journal、报告存放位置（相对项目根目录）</span>
+      </div>
+      <button class="btn pri" id="btnSaveMisc">保存命名/字幕/封面设置</button>
+    </div>
+
+    <!-- SPEC4 A2/C4：数据与备份 + 配置导入导出 -->
+    <div class="panel" id="backupPanel">
+      <h2>数据与备份</h2>
+      <p class="hint">备份状态库（state.db）、journal、任务记录到数据目录下的 backups/；恢复会覆盖当前状态库，建议先备份再恢复。配置可导出为 JSON，便于换机或分享。</p>
+      <div class="diag-actions">
+        <button class="btn pri" id="btnBackupNow">立即备份</button>
+        <button class="btn" id="btnExportConfig" title="下载当前配置 JSON">导出配置</button>
+        <button class="btn" id="btnImportConfig" title="用 JSON 文件整体替换当前配置">导入配置</button>
+        <input type="file" id="configFile" accept=".json,application/json" class="hidden" />
+        <span class="note">恢复备份需要确认；导入配置会用文件内容整体替换当前配置。</span>
+      </div>
+      <div class="backup-list" id="backupList"><div class="empty">加载中…</div></div>
+    </div>
+
+    <div class="panel" id="maintenancePanel">
+      <h2>缓存与维护</h2>
+      <p class="hint">清理元数据查询、字幕对比临时文件和封面代理缓存。保留媒体文件、人工修正、任务历史、撤销记录、配置和壁纸。</p>
+      <div class="diag-actions">
+        <button type="button" class="btn" id="btnClearCache">删除缓存</button>
+        <button type="button" class="btn pri" id="btnRestart">一键重启前后端</button>
+      </div>
+      <p class="note" id="maintenanceStatus" role="status" aria-live="polite">仅在没有运行或等待中的任务时可操作。</p>
+    </div>
+
+    <div class="panel">
+      <h2>后端信息</h2>
+      <div class="kv" id="backendInfo"><dt>状态</dt><dd>加载中…</dd></div>
+      <div class="diag-actions">
+        <button class="btn pri" id="btnDiagnose">运行自检</button>
+        <button class="btn" id="btnDiagnostics" title="下载 JSON 诊断包（脱敏，含配置/日志）">导出诊断包</button>
+        <button type="button" class="btn" data-updates-open aria-haspopup="dialog" aria-controls="updatesDialog">更新日志</button>
+        <span class="note">检查网络 / ffmpeg / 数据目录 / 配置警告；诊断包用于排障反馈</span>
+      </div>
+      <div class="diagbox hidden" id="diagBox"></div>
+    </div>
+  </section>
+</div>
+
+<!-- 详情抽屉 -->
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle" aria-hidden="true">
+  <div class="drawer-head">
+    <h2 id="dTitle">详情</h2>
+    <span class="grow"></span>
+    <button class="iconbtn" id="drawerPrev" title="上一项（←）" aria-label="上一项">← 上一项</button>
+    <button class="iconbtn" id="drawerNext" title="下一项（→）" aria-label="下一项">下一项 →</button>
+    <button class="iconbtn" id="drawerClose">关闭</button>
+  </div>
+  <div class="drawer-body">
+    <!-- F16 无番号反查：按标题/演员搜索 → 候选 chips → 点击填入番号 -->
+    <div class="flt-lookup" id="lookupBox">
+      <div class="flt-lookup-head"><strong>按标题 / 演员反查番号</strong><span class="note">没有番号时用</span></div>
+      <div class="flt-lookup-row">
+        <input type="text" id="lookupKeyword" placeholder="如 三上悠亚 / 作品标题关键词" autocomplete="off" spellcheck="false" />
+        <button class="btn sm" id="btnLookup">反查</button>
+      </div>
+      <div class="flt-lookup-results" id="lookupResults"></div>
+      <div class="flt-lookup-tip" id="lookupTip"></div>
+    </div>
+    <div id="drawerBody"></div>
+    <!-- SPEC3 手动选择字幕（renderDrawer 会把它移动进「字幕」区并保留事件） -->
+    <div class="sub-manual" id="subManualBox">
+      <h4>手动选择字幕</h4>
+      <div class="sub-manual-actions">
+        <button class="btn sm" id="subListBtn">列出候选字幕</button>
+        <span class="note" id="subTip">手动选择的字幕会覆盖同名 .srt；旧文件会备份为 .avc-bak-*。</span>
+      </div>
+      <div class="sub-candidates" id="subCandidates"></div>
+    </div>
+  </div>
+</aside>
+
+<!-- 目录浏览 -->
+<div class="modal" id="fsModal" role="dialog" aria-modal="true" aria-label="选择视频目录">
+  <div class="modal-card">
+    <div class="modal-head"><h3>选择视频目录</h3><button class="iconbtn" id="fsClose">关闭</button></div>
+    <div class="modal-body">
+      <div class="drives" id="fsDrives"></div>
+      <div class="crumbs" id="fsCrumbs"></div>
+      <div class="fslist" id="fsList"><div class="empty">加载中…</div></div>
+    </div>
+    <div class="modal-foot">
+      <span class="note" id="fsPath" style="margin-right:auto"></span>
+      <button class="btn" id="fsUp">上一级</button>
+      <button class="btn pri" id="fsUse">使用此目录</button>
+    </div>
+  </div>
+</div>
+
+<!-- 任务日志（历史页「查看日志」/ F9） -->
+<div class="modal" id="logModal" role="dialog" aria-modal="true" aria-labelledby="logModalTitle">
+  <div class="modal-card" style="width:min(760px,100%)">
+    <div class="modal-head"><h3 id="logModalTitle">任务日志</h3><span class="grow"></span><button class="iconbtn" id="logModalClose">关闭</button></div>
+    <div class="modal-body"><div class="logview" id="logModalBody"><div class="empty">加载中…</div></div></div>
+  </div>
+</div>
+
+<!-- 字幕内容预览（SPEC4 C2） -->
+<div class="modal" id="subPreviewModal" role="dialog" aria-modal="true" aria-labelledby="subPreviewTitle">
+  <div class="modal-card" style="width:min(820px,100%)">
+    <div class="modal-head"><h3 id="subPreviewTitle">字幕预览</h3><span class="grow"></span><button class="iconbtn" id="subPreviewClose">关闭</button></div>
+    <div class="modal-body">
+      <div class="subpreview-meta" id="subPreviewMeta"></div>
+      <div class="subpreview-body" id="subPreviewBody"><div class="empty">加载中…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 封面大图（SPEC5 B9） -->
+<div class="modal" id="coverModal" role="dialog" aria-modal="true" aria-labelledby="coverModalTitle">
+  <div class="modal-card cover-modal-card">
+    <div class="modal-head"><h3 id="coverModalTitle">封面大图</h3><span class="grow"></span><button class="iconbtn" id="coverModalClose">关闭</button></div>
+    <div class="modal-body">
+      <div class="cover-modal-body" id="coverModalBody"><div class="empty">加载中…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 确认 -->
+<div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="modal-card" style="width:min(460px,100%)">
+    <div class="modal-head"><h3 id="confirmTitle">确认</h3></div>
+    <div class="modal-body"><p id="confirmText" style="margin:0;color:var(--ink2)"></p></div>
+    <div class="modal-foot">
+      <button class="btn" id="confirmNo">取消</button>
+      <button class="btn pri" id="confirmYes">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 原生模态更新日志：焦点约束、Esc 关闭及背景不可交互由浏览器提供。 -->
+<dialog class="updates-dialog" id="updatesDialog" aria-labelledby="updatesTitle" aria-describedby="updatesIntro">
+  <div class="updates-head">
+    <img class="updates-branch" src="assets/sakura-branch.svg" alt="" aria-hidden="true" />
+    <p class="updates-eyebrow">AVC <span>v0.8.1</span></p>
+    <h2 id="updatesTitle">更新日志</h2>
+    <p class="updates-intro" id="updatesIntro">功能新增、体验改进与问题修复记录。</p>
+    <button type="button" class="updates-close" data-updates-close aria-label="关闭更新日志">×</button>
+  </div>
+  <div class="updates-history" tabindex="0" role="region" aria-label="历史更新日志，可滚动浏览">
+    <p class="updates-period" id="updatesPeriod">按发布时间倒序排列</p>
+    <ol class="updates-timeline" id="updatesTimeline"></ol>
+  </div>
+  <div class="updates-foot">
+    <div><label><input type="checkbox" id="updatesDismiss" /> 此版本不再自动提示</label><small class="updates-preference" id="updatesPreference" role="status"></small></div>
+    <button type="button" class="btn pri" data-updates-close autofocus>开始使用</button>
+  </div>
+</dialog>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<!-- 外观与氛围（左下角，appearance.js 挂载） -->
+<div class="bgctrl">
+  <button class="bgbtn" id="bgBtn" title="外观与氛围" aria-label="外观与氛围" aria-controls="apQuick bgPanel" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 5-5 4 4 3-2.5 4 3.5"/>
+    </svg>
+  </button>
+  <div class="bgpanel hidden" id="bgPanel"></div>
+</div>
+
+<div class="legal">MIT License · © 2026 <b>Qrimoon</b></div>
+
+<script type="module" src="app.js"></script>
+
+</body>
+</html>

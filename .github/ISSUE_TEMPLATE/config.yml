@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用问题 / 讨论
+    url: https://github.com/Qrispoon/Yuyuko-AVC/discussions
+    about: 非 Bug 的使用问题、配置问题请到 Discussions（若已开启）
+  - name: 安全漏洞
+    url: https://github.com/Qrispoon/Yuyuko-AVC/security/advisories/new
+    about: 请勿公开披露安全漏洞，使用私密报告

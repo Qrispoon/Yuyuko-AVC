@@ -1,0 +1,78 @@
+{
+  "network": {
+    "proxy": "",
+    "proxyHosts": [
+      "manko.fun",
+      "subtitlecat.com",
+      "javdb.com",
+      "jav321.com",
+      "avmoo.cyou",
+      "avsox.click",
+      "javbus.com",
+      "r18.dev"
+    ],
+    "directHosts": [
+      "healertanker.com",
+      "image.healertanker.com",
+      "wasabisys.com"
+    ],
+    "defaultRoute": "direct",
+    "timeoutMs": 20000,
+    "retry": 3,
+    "minIntervalMs": 1200
+  },
+  "metadata": {
+    "r18": true
+  },
+  "rename": {
+    "template": "{code} {title} [{actress}]",
+    "maxLength": 170
+  },
+  "subs": {
+    "lang": "zh",
+    "sources": [
+      "manko",
+      "subtitlecat",
+      "local"
+    ],
+    "localDirs": [],
+    "maxCandidatesPerSource": 4,
+    "subtitlecatLimit": 4,
+    "maxDurationDeltaMin": 5,
+    "fit": {
+      "mode": "auto",
+      "toleranceSec": 2,
+      "maxShiftSec": 90
+    },
+    "extraLangs": []
+  },
+  "covers": {
+    "download": true,
+    "posterWhenSingle": true,
+    "embed": false
+  },
+  "media": {
+    "probeDuration": "auto"
+  },
+  "scan": {
+    "videoExtensions": [
+      ".mp4",
+      ".mkv",
+      ".avi",
+      ".wmv",
+      ".mov",
+      ".ts",
+      ".m2ts",
+      ".iso"
+    ]
+  },
+  "paths": {
+    "dataDir": "data"
+  },
+  "fs": {
+    "enabled": true,
+    "allowedRoots": [],
+    "maxEntries": 5000,
+    "showFiles": true
+  }
+}

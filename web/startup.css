@@ -1,0 +1,24 @@
+@charset "utf-8";
+:root{color-scheme:light;background:#f5f2eb;color:#59605c;font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;min-width:280px;min-height:100svh;background:#f5f2eb}
+.studio{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px 30px}
+.art-holder{position:relative;width:min(74vw,calc((100svh - 210px) * .68797),480px);aspect-ratio:915/1330;isolation:isolate}
+.study-layer,.finish-layer{position:absolute;inset:0;will-change:opacity}
+.study-layer svg,.finish-layer img{display:block;width:100%;height:100%;overflow:visible}
+.finish-layer{opacity:0;pointer-events:none}
+.preparing .study-layer{visibility:hidden}
+.preparing.warming .study-layer{visibility:visible;opacity:.001}
+.drawing-stroke{fill:none;stroke:#514b58;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1}
+.wash-brush{stroke-dasharray:1;stroke-dashoffset:1;stroke-width:0}
+#underpainting,#color-settle{opacity:0}
+#gesture-layer{opacity:1}
+.status{margin:22px 0 18px;font-size:20px;font-weight:400;letter-spacing:.24em;padding-left:.24em}
+#enter{min-width:140px;padding:12px 36px;border:1px solid #b38390;border-radius:12px;background:#dfc4cb;color:#67434e;font:inherit;font-size:18px;letter-spacing:.3em;text-indent:.3em;cursor:pointer;opacity:0;visibility:hidden;transform:translateY(6px);transition:background .2s,border-color .2s,opacity 1.6s ease-in-out,transform 1.6s ease-in-out}
+#enter.enter-visible{opacity:1;visibility:visible;transform:translateY(0)}
+#enter:hover:enabled{background:#d4b2bc;border-color:#9e6c7a}
+#enter:disabled{cursor:default;pointer-events:none}
+#enter:focus-visible{outline:2px solid #a77f89;outline-offset:5px}
+body.leaving{opacity:0;transition:opacity .3s ease-in-out}
+@media(max-height:480px) and (min-width:600px){.studio{padding:16px;display:grid;grid-template-columns:auto auto;grid-template-rows:1fr auto auto 1fr;justify-content:center;column-gap:45px}.art-holder{grid-row:1/5;width:min(45vw,calc((100svh - 32px) * .68797))}.status{grid-column:2;grid-row:2;margin:0 0 20px}#enter{grid-column:2;grid-row:3}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important}}

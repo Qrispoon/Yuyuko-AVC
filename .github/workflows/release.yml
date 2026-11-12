@@ -1,0 +1,48 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Verify tag matches package version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ("v$version" -ne "$env:GITHUB_REF_NAME") {
+            Write-Error "tag $env:GITHUB_REF_NAME does not match package.json version v$version"
+            exit 1
+          }
+
+      - name: Run tests
+        run: npm test
+
+      - name: Release consistency checks
+        run: node tools/check-release.mjs
+
+      - name: Build portable zip
+        run: node tools/build-portable.mjs
+
+      - name: Build delivery-documents zip
+        run: node tools/build-docs-zip.mjs
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/AVC-v*-win64-portable.zip
+            dist/AVC-v*-交付文档.zip
+          generate_release_notes: true

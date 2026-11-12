@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 760" role="img" aria-labelledby="title desc">
+<title id="title">西行寺幽幽子</title><desc id="desc">幽幽子身着飘逸和服，手执折扇，浅樱色花瓣环绕。</desc>
+<defs><linearGradient id="dress" x2=".9" y2="1"><stop stop-color="#f3e9e7"/><stop offset=".52" stop-color="#d6e1dc"/><stop offset="1" stop-color="#aabeb7"/></linearGradient><linearGradient id="hair" x2="1" y2="1"><stop stop-color="#32394b"/><stop offset=".6" stop-color="#535466"/><stop offset="1" stop-color="#747080"/></linearGradient><radialGradient id="wash"><stop stop-color="#fffaf2" stop-opacity=".96"/><stop offset="1" stop-color="#e5c5c7" stop-opacity="0"/></radialGradient><filter id="soft"><feGaussianBlur stdDeviation="18"/></filter></defs>
+<style>.wash{opacity:0;animation:paint 2.8s ease-out 2.9s forwards}.stroke{stroke-dasharray:1200;stroke-dashoffset:1200;animation:draw 2.5s ease-out forwards}.stroke:nth-of-type(2){animation-delay:.4s}.stroke:nth-of-type(3){animation-delay:.8s}.stroke:nth-of-type(4){animation-delay:1.2s}.stroke:nth-of-type(5){animation-delay:1.6s}.stroke:nth-of-type(6){animation-delay:2s}.stroke:nth-of-type(7){animation-delay:2.4s}@keyframes draw{to{stroke-dashoffset:0}}@keyframes paint{to{opacity:.82}}@media(prefers-reduced-motion:reduce){.wash{opacity:.82;animation:none}.stroke{stroke-dasharray:none;stroke-dashoffset:0;animation:none}}</style>
+<ellipse cx="274" cy="405" rx="205" ry="295" fill="url(#wash)"/><g fill="#d79ba2" opacity=".55" filter="url(#soft)"><circle cx="112" cy="260" r="58"/><circle cx="413" cy="468" r="67"/><circle cx="333" cy="160" r="42"/></g>
+<g class="wash" opacity="0"><path fill="#d5dfda" d="M155 493q40-62 93-51l51 21q46-20 88 26l82 233-81 25q-55-89-111-82-59 5-118 68l-87-26 81-178z"/><path fill="#8e9eaa" d="M178 194q17-99 120-92 91 3 108 104l-39 135-173 5-53-90z"/><path fill="#b86f82" d="M185 112q29-79 145-54 85 20 92 73-64-29-113-17-72 18-130 64l-36-16z"/><path fill="#e2c8c1" d="M178 511q86 59 167 13l51 80q-74 62-174 35l-71 102-42-17 62-155z"/></g>
+<g fill="none" stroke="#454654" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+<path class="stroke" data-delay=".1" d="M190 202q-27-86 18-128 55-51 143-8 66 32 53 142M172 169q-47 105-9 205 21 58 9 132M389 159q43 98 11 181-23 58 23 139"/>
+<path class="stroke" data-delay=".5" d="M226 203q-13 53 9 92 19 27 57 28 40-3 56-35 14-36 0-80-16-49-67-50-44 2-55 45z" fill="#f0d7cc"/>
+<path class="stroke" data-delay=".9" d="M236 250q13-11 28 0m45 0q14-11 28 0m-54 31q8 6 16 0m-51-98q13-19 37-18m31 0q20 3 33 19"/>
+<path class="stroke" data-delay="1.3" d="M188 177q57-70 110-66 46-3 94 46-53-23-97-9-53 9-95 53zM205 204q-22 80-4 156m167-152q14 77 0 145M198 150q-42-12-64 20 37-1 61 18m200-40q39-11 62 23-38-2-58 20"/>
+<path class="stroke" data-delay="1.7" d="M232 320q-52 10-85 69l-49 163 92 46 78-92 28 120 54-116 83 89 66-53-84-163q-34-52-99-63" fill="url(#dress)"/>
+<path class="stroke" data-delay="2.1" d="M173 387q60 54 117 42 55 0 91-44m-186 98q62 47 122 40 46-4 76-30m-189 75q50 36 100 43m-27-220q-16 64 12 103m28-104q31 53 13 109"/>
+<path class="stroke" data-delay="2.5" d="M318 369q42 15 57 59l-34 36-49-54zm21 54q29-17 56 3m-10-19q30-18 56-2"/>
+<path class="stroke" data-delay="2.9" d="M364 357l94-126q10-12 22-3 10 8 0 20L382 383zm16-12 66-94m-44 62 56-49m-75 65 57-49"/>
+<path class="stroke" data-delay="3.2" d="M124 198q-13-15-21 2-8 15 7 22 12 6 19-7 6-11-5-17zm291 235q-12-14-21 1-7 14 7 21 11 5 18-7 5-10-4-15zm-259 99q-13-16-21 1-8 15 8 22 12 5 18-7 6-10-5-16zm190-410q-12-14-20 2-7 13 7 19 11 5 17-6 5-10-4-15z"/>
+</g><g fill="#ba7785" opacity=".72"><circle cx="129" cy="222" r="4"/><circle cx="397" cy="492" r="4"/><circle cx="335" cy="105" r="3"/><path d="M99 332q15-22 29 0-14 19-29 0m278-235q13-20 26 0-13 17-26 0m34 405q12-19 25 0-13 18-25 0"/></g>
+<g fill="none" stroke="#bf8990" stroke-width="1" opacity=".7"><path d="M93 285q47 21 68 62m236-158q-37 30-43 61M114 474q46-10 68 0m207-268q30-10 54 3"/></g>
+</svg>
