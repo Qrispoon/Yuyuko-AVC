@@ -8,7 +8,8 @@ import {once} from 'node:events';
 import {validateImage,normalizeSearchResults,searchFrame} from '../src/sources/frame-search.mjs';
 import {upload} from '../src/net/upload.mjs';
 import {validateSettings,readSettings,writeSettings} from '../src/core/assembly-settings.mjs';
-import {discover,createMuxPlan,claimMuxPlan,executeMux,undoMux,identity} from '../src/core/assembly.mjs';
+import {discover,createMuxPlan,claimMuxPlan,executeMux,undoMux,identity,createPathAuthorizer} from '../src/core/assembly.mjs';
+import {shortPath} from './helpers/windows-path.mjs';
 import {runTool,probe,hashFile,subtitleText} from '../src/media/mux.mjs';
 import {startServer} from '../src/server.mjs';
 import {muxReportHTML} from '../src/core/assembly-report.mjs';
@@ -52,9 +53,26 @@ test('assembly settings keep secret separate and validate endpoints / auth heade
  for(const input of [{endpoint:'http://example.com/search'},{endpoint:'https://user:pass@example.com/search'},{endpoint:'file:///secret'},{authHeader:'Host'},{authHeader:'Authorization\r\nX-foo: x'}])assert.throws(()=>validateSettings(input));
 });
 test('local discovery prefers exact SRT and confines real paths; existing files are never selected implicitly',async t=>{
- const dir=await temporary(t);for(const name of ['example.mp4','example.srt','example.zh.srt','example2.srt'])await fs.writeFile(path.join(dir,name),'test');
+ const dir=await fs.realpath(await temporary(t));for(const name of ['example.mp4','example.srt','example.zh.srt','example2.srt'])await fs.writeFile(path.join(dir,name),'test');
  const r=await discover(dir,p=>p===dir||p.startsWith(dir+path.sep));assert.equal(r.files.length,1);assert.equal(r.files[0].subtitle,path.join(dir,'example.srt'));assert.equal(r.files[0].subtitles.length,2);
  await assert.rejects(()=>discover(dir,()=>false),{code:'fs_forbidden'});
+});
+test('assembly authorization accepts Windows short roots without authorizing sibling directories',{skip:process.platform!=='win32'},async t=>{
+ const root=await temporary(t),dir=path.join(root,'authorized long directory'),sibling=path.join(root,'authorized long directory-other');
+ await fs.mkdir(dir);await fs.mkdir(sibling);await fs.writeFile(path.join(dir,'example.mp4'),'synthetic video');
+ const alias=await shortPath(t,dir);if(!alias)return;
+ const allowed=await createPathAuthorizer([alias,path.join(root,'missing')]);
+ assert.equal((await discover(dir,allowed)).files.length,1);
+ assert.equal((await discover(alias,allowed)).dir,await fs.realpath(dir));
+ await assert.rejects(()=>discover(sibling,allowed),{code:'fs_forbidden'});
+ const disabled=await createPathAuthorizer([alias],{enabled:false});
+ await assert.rejects(()=>discover(dir,disabled),{code:'fs_forbidden'});
+ const configFile=path.join(root,'alias-config.json');
+ await fs.writeFile(configFile,JSON.stringify({paths:{dataDir:path.join(root,'data')},fs:{enabled:true,allowedRoots:[alias]}}));
+ const app=await startServer({port:0,configFile,quiet:true});t.after(()=>app.close());
+ const base=`http://127.0.0.1:${app.port}`;
+ const response=await post(base,'/api/assembly/files',{dir});assert.equal(response.status,200);assert.equal((await response.json()).files.length,1);
+ assert.equal((await post(base,'/api/assembly/files',{dir:sibling})).status,403);
 });
 test('media process cancellation waits for child exit and returns a stable error',async()=>{
  const ctrl=new AbortController();const p=runTool(process.execPath,['-e','setInterval(()=>{},1000)'],{signal:ctrl.signal});setTimeout(()=>ctrl.abort(),50);await assert.rejects(()=>p,{code:'CANCELLED'});

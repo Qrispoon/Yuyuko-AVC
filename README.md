@@ -8,9 +8,10 @@
 
 当前源码版本：**v0.8.1**（2026-11-11）。
 **0.8.1 更新重点**：可选的 **“更多动效（实验中）”** 默认关闭，修复了一些稳定性bug。
-[!\[tests](https://github.com/Qrispoon/Yuyuko-AVC/actions/workflows/test.yml/badge.svg)](https://github.com/Qrispoon/Yuyuko-AVC/actions/workflows/test.yml)
-[!\[license](https://img.shields.io/github/license/Qrispoon/Yuyuko-AVC)](LICENSE)
-[!\[node](https://img.shields.io/badge/node-%3E%3D22.13-brightgreen)](package.json)
+
+[![tests](https://github.com/Qrispoon/Yuyuko-AVC/actions/workflows/test.yml/badge.svg)](https://github.com/Qrispoon/Yuyuko-AVC/actions/workflows/test.yml)
+[![license](https://img.shields.io/github/license/Qrispoon/Yuyuko-AVC)](LICENSE)
+[![node](https://img.shields.io/badge/node-%3E%3D22.13-brightgreen)](package.json)
 
 \---
 

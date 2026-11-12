@@ -9,6 +9,7 @@ import { once } from 'node:events';
 import { clearCaches } from '../src/core/maintenance.mjs';
 import { openState } from '../src/core/state.mjs';
 import { startServer } from '../src/server.mjs';
+import { shortPath } from './helpers/windows-path.mjs';
 
 const rootDir = fileURLToPath(new URL('../', import.meta.url));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -48,6 +49,18 @@ test('cache clear removes only disposable entries and preserves media, locks, pl
   const next=openState(path.join(data,'state.db'));
   try { assert.equal(next.getCode('IPX-920'),null); assert.equal(next.record(file).fields.maker.value,'Manual lock'); assert.equal(next.correctionHistory(file).length,1); assert.equal(next.getFile(file).data.meta.titleJa,'Historical result'); assert.equal(next.subtitlesFor('IPX-920').length,1); } finally {next.close();}
   assert.equal((await clearCaches(data,covers)).entries,0);
+});
+
+test('cache clear accepts Windows short parent paths and preserves non-cache files',{skip:process.platform!=='win32'},async t=>{
+  const {root,data,file}=await fixture(t);
+  await fs.mkdir(path.join(data,'subtitle-previews'),{recursive:true});
+  const alias=await shortPath(t,root);if(!alias)return;
+  const cached=path.join(data,'subtitle-previews','c'.repeat(64)+'.json');
+  await fs.writeFile(cached,'disposable');await fs.writeFile(path.join(data,'subtitle-previews','keep.txt'),'keep');
+  const result=await clearCaches(path.join(alias,'data'));
+  assert.equal(result.previewFiles,1);await assert.rejects(()=>fs.stat(cached),{code:'ENOENT'});
+  assert.equal(await fs.readFile(path.join(data,'subtitle-previews','keep.txt'),'utf8'),'keep');
+  assert.equal(await fs.readFile(file,'utf8'),'QA placeholder video');
 });
 
 test('cache clear refuses linked cache directories without deleting external files or DB cache', async t => {

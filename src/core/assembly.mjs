@@ -9,6 +9,18 @@ async function writeJson(file,data){await fs.mkdir(path.dirname(file),{recursive
 export async function identity(file){const s=await fs.stat(file);if(!s.isFile())throw fault('FILE_REQUIRED');return {size:s.size,mtimeMs:s.mtimeMs,ino:String(s.ino),dev:String(s.dev),birthtimeMs:s.birthtimeMs};}
 const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 async function readSub(file){if((await fs.stat(file)).size>8*1024*1024)throw fault('SUBTITLE_TOO_LARGE');const bytes=await fs.readFile(file);return {...subtitleText(bytes),hash:sha(bytes)};}
+// authorizedPath supplies a real path; resolve configured roots the same way.
+export async function createPathAuthorizer(roots,{enabled=true}={}) {
+  if(!enabled)return ()=>false;
+  const canonicalRoots=(await Promise.all(roots.map(async root=>{
+    try{return await fs.realpath(path.resolve(root));}
+    catch(e){if(e.code==='ENOENT'||e.code==='ENOTDIR')return null;throw e;}
+  }))).filter(Boolean);
+  return target=>canonicalRoots.some(root=>{
+    const relative=path.relative(root,target);
+    return relative===''||(!path.isAbsolute(relative)&&relative!=='..'&&!relative.startsWith('..'+path.sep));
+  });
+}
 export async function authorizedPath(input,allowed,{directory=false}={}) {
   if(typeof input!=='string'||!input.trim())throw fault('PATH_REQUIRED');
   const real=await fs.realpath(path.resolve(input));if(!allowed(real))throw fault('fs_forbidden',403);

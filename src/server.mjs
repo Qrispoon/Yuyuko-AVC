@@ -27,7 +27,7 @@ import { createSubtitleCatalog } from './subs/manual.mjs';
 import { createBackup, listBackups, restoreBackup } from './core/backup.mjs';
 import { decodeToUtf8, parseSrt } from './subs/verify.mjs';
 import { readSettings, writeSettings } from './core/assembly-settings.mjs';
-import { discover,createMuxPlan,claimMuxPlan,loadMuxPlan,executeMux,undoMux } from './core/assembly.mjs';
+import { discover,createMuxPlan,claimMuxPlan,loadMuxPlan,executeMux,undoMux,createPathAuthorizer } from './core/assembly.mjs';
 import { searchFrame,MAX_IMAGE_BYTES } from './sources/frame-search.mjs';
 import { runTool } from './media/mux.mjs';
 import { muxReportHTML } from './core/assembly-report.mjs';
@@ -434,7 +434,8 @@ async function drainOwned() {
         let config = await loadConfig();
         if(job.kind==='mux') {
           const plan=await loadMuxPlan(dataDirOf(config),job.options.muxPlanId);
-          const report=await executeMux(dataDirOf(config),plan,{signal:job.controller.signal,allowed:p=>isAllowedPath(config,p),jobId:job.id,
+          const policy=fsConfig(config),allowed=await createPathAuthorizer(policy.allowedRoots,policy);
+          const report=await executeMux(dataDirOf(config),plan,{signal:job.controller.signal,allowed,jobId:job.id,
             onProgress:progress=>{job.progress=progress;broadcast(job,{type:'mux-progress',progress});},
             onResult:async(result,journal)=>{job.partial=job.partial||[];job.partial.push(result);pushLog(job,`mux ${result.status}: ${result.file}${result.error?' · '+result.error:''}`);job.report={kind:'mux',dir:job.dir,apply:true,results:job.partial,journal,summary:{},partial:true};await persistJob(job);}});
           job.report=report;job.summary=report.summary;terminalStatus=report.cancelled?'cancelled':'done';
@@ -826,7 +827,7 @@ async function route(req, res) {
   const p = url.pathname;
   const method = req.method.toUpperCase();
   if(p.startsWith('/api/assembly/')) {
-    const config=await loadConfig(),dataDir=dataDirOf(config),allowed=target=>isAllowedPath(config,target);
+    const config=await loadConfig(),dataDir=dataDirOf(config);
     if(p==='/api/assembly/settings'&&method==='GET')return json(res,200,await readSettings(dataDir));
     if(p==='/api/assembly/settings'&&method==='POST'){
       if(assemblyBusy||running||queue.length)return json(res,409,{error:'task_running'});
@@ -846,6 +847,7 @@ async function route(req, res) {
         const result=await searchFrame(Buffer.concat(chunks),await readSettings(dataDir,{privateValues:true}),{signal:controller.signal});return json(res,200,result);
       }
       const body=await readBody(req);
+      const policy=fsConfig(config),allowed=await createPathAuthorizer(policy.allowedRoots,policy);
       if(p.endsWith('/files'))return json(res,200,await discover(body.dir,allowed));
       if(p.endsWith('/plan'))return json(res,200,await createMuxPlan(dataDir,body,await readSettings(dataDir),allowed,controller.signal));
       const plan=await claimMuxPlan(dataDir,body.planId,{keepExisting:!!body.keepExisting},allowed);
